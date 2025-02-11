@@ -1,6 +1,8 @@
+import math
 from typing import Callable
 
 import torch
+import torch.nn.functional as F
 from torch import distributions as pyd
 from torch import nn
 from torch.distributions import Normal
@@ -14,8 +16,8 @@ from cares_reinforcement_learning.encoders.vanilla_autoencoder import (
     Encoder,
     VanillaAutoencoder,
 )
-from cares_reinforcement_learning.util.configurations import MLPConfig
 from cares_reinforcement_learning.networks.batchrenorm import BatchRenorm1d
+from cares_reinforcement_learning.util.configurations import MLPConfig
 
 
 def get_pytorch_module_from_name(module_name: str) -> Callable[..., nn.Module] | None:
@@ -25,6 +27,8 @@ def get_pytorch_module_from_name(module_name: str) -> Callable[..., nn.Module] |
         return getattr(nn, module_name)
     elif module_name == "BatchRenorm1d":
         return BatchRenorm1d
+    elif module_name == "NoisyLinear":
+        return NoisyLinear
     return None
 
 
@@ -41,6 +45,9 @@ class MLP(nn.Module):
         hidden_sizes = config.hidden_sizes
 
         layer_order = config.layer_order
+
+        linear_layer = get_pytorch_module_from_name(config.linear_layer)
+        linear_layer = linear_layer if linear_layer is not None else nn.Linear
 
         input_layer = get_pytorch_module_from_name(config.input_layer)
 
@@ -64,7 +71,9 @@ class MLP(nn.Module):
             layers.append(input_layer(input_size, **config.input_layer_args))
 
         for next_size in hidden_sizes:
-            layers.append(nn.Linear(input_size, next_size, **config.linear_layer_args))
+            layers.append(
+                linear_layer(input_size, next_size, **config.linear_layer_args)
+            )
 
             for layer_type in layer_order:
 
@@ -90,7 +99,9 @@ class MLP(nn.Module):
             input_size = next_size
 
         if output_size is not None:
-            layers.append(nn.Linear(input_size, output_size))
+            layers.append(
+                linear_layer(input_size, output_size, **config.linear_layer_args)
+            )
 
             if output_activation_function is not None:
                 layers.append(
@@ -516,3 +527,122 @@ class SquashedNormal(TransformedDistribution):
         for tr in self.transforms:
             mu = tr(mu)
         return mu
+
+
+class NoisyLinear(nn.Linear):
+    """Noisy Linear Layer.
+
+    Presented in "Noisy Networks for Exploration", https://arxiv.org/abs/1706.10295v3
+
+    A Noisy Linear Layer is a linear layer with parametric noise added to the weights. This induced stochasticity can
+    be used in RL networks for the agent's policy to aid efficient exploration. The parameters of the noise are learned
+    with gradient descent along with any other remaining network weights. Factorized Gaussian
+    noise is the type of noise usually employed.
+
+
+    Args:
+        in_features (int): input features dimension
+        out_features (int): out features dimension
+        bias (bool, optional): if ``True``, a bias term will be added to the matrix multiplication: Ax + b.
+            Defaults to ``True``
+        dtype (torch.dtype, optional): dtype of the parameters.
+            Defaults to ``None`` (default pytorch dtype)
+        std_init (scalar, optional): initial value of the Gaussian standard deviation before optimization.
+            Defaults to ``0.1``
+
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        dtype: torch.dtype | None = None,
+        std_init: float = 0.1,
+    ):
+        nn.Module.__init__(self)
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.std_init = std_init
+
+        self.weight_mu = nn.Parameter(
+            torch.empty(
+                out_features,
+                in_features,
+                dtype=dtype,
+                requires_grad=True,
+            )
+        )
+        self.weight_sigma = nn.Parameter(
+            torch.empty(
+                out_features,
+                in_features,
+                dtype=dtype,
+                requires_grad=True,
+            )
+        )
+        self.register_buffer(
+            "weight_epsilon",
+            torch.empty(out_features, in_features, dtype=dtype),
+        )
+        if bias:
+            self.bias_mu = nn.Parameter(
+                torch.empty(
+                    out_features,
+                    dtype=dtype,
+                    requires_grad=True,
+                )
+            )
+            self.bias_sigma = nn.Parameter(
+                torch.empty(
+                    out_features,
+                    dtype=dtype,
+                    requires_grad=True,
+                )
+            )
+            self.register_buffer(
+                "bias_epsilon",
+                torch.empty(out_features, dtype=dtype),
+            )
+        else:
+            self.bias_mu = None
+        self.reset_parameters()
+        self.reset_noise()
+
+    def reset_parameters(self) -> None:
+        mu_range = 1 / math.sqrt(self.in_features)
+        self.weight_mu.data.uniform_(-mu_range, mu_range)
+        self.weight_sigma.data.fill_(self.std_init / math.sqrt(self.in_features))
+        if self.bias_mu is not None:
+            self.bias_mu.data.uniform_(-mu_range, mu_range)
+            self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.out_features))
+
+    def reset_noise(self) -> None:
+        epsilon_in = self._scale_noise(self.in_features)
+        epsilon_out = self._scale_noise(self.out_features)
+        self.weight_epsilon.copy_(epsilon_out.outer(epsilon_in))
+        if self.bias_mu is not None:
+            self.bias_epsilon.copy_(epsilon_out)
+
+    def _scale_noise(self, size: int | torch.Size) -> torch.Tensor:
+        if isinstance(size, int):
+            size = (size,)
+        x = torch.randn(*size, device=self.weight_mu.device)
+        return x.sign().mul_(x.abs().sqrt_())
+
+    @property
+    def weight(self) -> torch.Tensor:
+        if self.training:
+            return self.weight_mu + self.weight_sigma * self.weight_epsilon
+        else:
+            return self.weight_mu
+
+    @property
+    def bias(self) -> torch.Tensor | None:
+        if self.bias_mu is not None:
+            if self.training:
+                return self.bias_mu + self.bias_sigma * self.bias_epsilon
+            else:
+                return self.bias_mu
+        else:
+            return None

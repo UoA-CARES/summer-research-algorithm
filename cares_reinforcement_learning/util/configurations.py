@@ -46,6 +46,7 @@ class MLPConfig(SubscriptableClass):
     input_layer: str = ""
     input_layer_args: dict[str, Any] = Field(default_factory=dict)
 
+    linear_layer: str = "linear"
     linear_layer_args: dict[str, Any] = Field(default_factory=dict)
 
     batch_layer: str = ""
@@ -161,6 +162,21 @@ class DuelingDQNConfig(AlgorithmConfig):
     advantage_stream_config: MLPConfig = MLPConfig(hidden_sizes=[512])
 
 
+class NoisyNetConfig(AlgorithmConfig):
+    algorithm: str = Field("NoisyNet", Literal=True)
+    lr: float = 1e-3
+    gamma: float = 0.99
+
+    exploration_min: float = 1e-3
+    exploration_decay: float = 0.95
+
+    network_config: MLPConfig = MLPConfig(
+        hidden_sizes=[512, 512],
+        linear_layer="NoisyLinear",
+        linear_layer_args={"std_init": 0.1},
+    )
+
+
 ###################################
 #         PPO Algorithms          #
 ###################################
@@ -194,12 +210,12 @@ class SACDConfig(AlgorithmConfig):
     critic_lr: float = 3e-4
     alpha_lr: float = 3e-4
 
-    batch_size = 64
+    batch_size: int = 64
 
-    target_entropy_multiplier = 0.98
+    target_entropy_multiplier: float = 0.98
 
-    max_steps_exploration = 20000
-    number_steps_per_train_policy = 4
+    max_steps_exploration: int = 20000
+    number_steps_per_train_policy: int = 4
 
     gamma: float = 0.99
     tau: float = 0.005
@@ -438,7 +454,6 @@ class CrossQConfig(AlgorithmConfig):
 
     actor_config: MLPConfig = MLPConfig(
         input_layer="BatchRenorm1d",
-        linear_layer_args={"bias": False},
         hidden_sizes=[256, 256],
         batch_layer="BatchRenorm1d",
         batch_layer_args={"momentum": 0.01},
@@ -446,7 +461,6 @@ class CrossQConfig(AlgorithmConfig):
     )
     critic_config: MLPConfig = MLPConfig(
         input_layer="BatchRenorm1d",
-        linear_layer_args={"bias": False},
         hidden_sizes=[2048, 2048],
         batch_layer="BatchRenorm1d",
         batch_layer_args={"momentum": 0.01},
