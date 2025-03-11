@@ -359,10 +359,10 @@ def create_DDPG(observation_size, action_num, config: acf.DDPGConfig):
 
 def create_TD3(observation_size, action_num, config: acf.TD3Config):
     from cares_reinforcement_learning.algorithm.policy import TD3
-    from cares_reinforcement_learning.networks.TD3 import Actor, Critic
+    from cares_reinforcement_learning.networks.TD3 import DefaultActor, DefaultCritic
 
-    actor = Actor(observation_size, action_num, config=config)
-    critic = Critic(observation_size, action_num, config=config)
+    actor = DefaultActor(observation_size, action_num, config=config)
+    critic = DefaultCritic(observation_size, action_num, config=config)
 
     device = hlp.get_device()
     agent = TD3(
@@ -524,12 +524,12 @@ def create_RDTD3(observation_size, action_num, config: acf.RDTD3Config):
 
 def create_CTD4(observation_size, action_num, config: acf.CTD4Config):
     from cares_reinforcement_learning.algorithm.policy import CTD4
-    from cares_reinforcement_learning.networks.CTD4 import Actor, Critic
+    from cares_reinforcement_learning.networks.CTD4 import DefaultActor, DefaultCritic
 
     device = hlp.get_device()
 
-    actor = Actor(observation_size, action_num, config=config)
-    ensemble_critic = Critic(observation_size, action_num, config=config)
+    actor = DefaultActor(observation_size, action_num, config=config)
+    ensemble_critic = DefaultCritic(observation_size, action_num, config=config)
 
     agent = CTD4(
         actor_network=actor,

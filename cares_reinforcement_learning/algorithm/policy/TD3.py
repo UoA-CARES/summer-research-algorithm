@@ -34,9 +34,9 @@ class TD3:
         self.critic_net = critic_network.to(self.device)
 
         self.target_actor_net = copy.deepcopy(self.actor_net).to(self.device)
-        self.target_actor_net.eval()  # never in training mode - helps with batch/drop out layers
+        # self.target_actor_net.eval()  # never in training mode - helps with batch/drop out layers
         self.target_critic_net = copy.deepcopy(self.critic_net).to(self.device)
-        self.target_critic_net.eval()  # never in training mode - helps with batch/drop out layers
+        # self.target_critic_net.eval()  # never in training mode - helps with batch/drop out layers
 
         self.gamma = config.gamma
         self.tau = config.tau
@@ -55,6 +55,9 @@ class TD3:
         self.critic_net_optimiser = torch.optim.Adam(
             self.critic_net.parameters(), lr=config.critic_lr
         )
+
+        print(self.actor_net)
+        print(self.critic_net)
 
     def select_action_from_policy(
         self, state: np.ndarray, evaluation: bool = False, noise_scale: float = 0.1

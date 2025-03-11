@@ -9,10 +9,11 @@ class DefaultActor(DeterministicPolicy):
         self,
         observation_size: int,
         num_actions: int,
-        hidden_sizes: list[int] | None = None,
+        config: TD3Config,
     ):
-        if hidden_sizes is None:
-            hidden_sizes = [256, 256]
+        # hidden_sizes = config.actor_config.hidden_sizes
+        # if hidden_sizes is None:
+        hidden_sizes = [256, 256]
 
         super().__init__(
             input_size=observation_size,
@@ -25,6 +26,7 @@ class DefaultActor(DeterministicPolicy):
         self.act_net = nn.Sequential(
             nn.Linear(observation_size, hidden_sizes[0]),
             nn.ReLU(),
+            # nn.BatchNorm1d(hidden_sizes[0]),
             nn.Linear(hidden_sizes[0], hidden_sizes[1]),
             nn.ReLU(),
             nn.Linear(hidden_sizes[1], num_actions),

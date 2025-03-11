@@ -56,6 +56,9 @@ class SAC:
             self.critic_net.parameters(), lr=config.critic_lr
         )
 
+        print(self.actor_net)
+        print(self.critic_net)
+
         # Temperature (alpha) for the entropy loss
         # Set to initial alpha to 1.0 according to other baselines.
         init_temperature = 1.0

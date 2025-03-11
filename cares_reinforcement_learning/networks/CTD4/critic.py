@@ -22,6 +22,7 @@ class DefaultContinuousDistributedCritic(ContinuousDistributedCritic):
         self.mean_layer = nn.Sequential(
             nn.Linear(input_size, hidden_sizes[0]),
             nn.ReLU(),
+            # nn.BatchNorm1d(hidden_sizes[0]),
             nn.Linear(hidden_sizes[0], hidden_sizes[1]),
             nn.ReLU(),
             nn.Linear(hidden_sizes[1], 1),
@@ -30,6 +31,7 @@ class DefaultContinuousDistributedCritic(ContinuousDistributedCritic):
         self.std_layer = nn.Sequential(
             nn.Linear(input_size, hidden_sizes[0]),
             nn.ReLU(),
+            # nn.BatchNorm1d(hidden_sizes[0]),
             nn.Linear(hidden_sizes[0], hidden_sizes[1]),
             nn.ReLU(),
             nn.Linear(hidden_sizes[1], 1),
@@ -39,12 +41,11 @@ class DefaultContinuousDistributedCritic(ContinuousDistributedCritic):
 
 
 class DefaultCritic(EnsembleCritic):
-    def __init__(self, observation_size: int, num_actions: int):
+    def __init__(self, observation_size: int, num_actions: int,config):
         input_size = observation_size + num_actions
 
         ensemble_size = 3
-        hidden_sizes = [256, 256]
-
+        hidden_sizes = [1024, 1024]
         super().__init__(
             input_size=input_size,
             output_size=1,

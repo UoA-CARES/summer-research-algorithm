@@ -48,7 +48,7 @@ class MLPConfig(SubscriptableClass):
 
     linear_layer_args: dict[str, Any] = Field(default_factory=dict)
 
-    batch_layer: str = ""
+    batch_layer: str = "BatchNorm1d"
     batch_layer_args: dict[str, Any] = Field(default_factory=dict)
 
     dropout_layer: str = ""
@@ -227,8 +227,8 @@ class SACConfig(AlgorithmConfig):
     policy_update_freq: int = 1
     target_update_freq: int = 1
 
-    actor_config: MLPConfig = MLPConfig(hidden_sizes=[256, 256])
-    critic_config: MLPConfig = MLPConfig(hidden_sizes=[256, 256])
+    actor_config: MLPConfig = MLPConfig(hidden_sizes=[1024, 1024])
+    critic_config: MLPConfig = MLPConfig(hidden_sizes=[1024, 1024])
 
 
 class SACAEConfig(SACConfig):
@@ -541,9 +541,9 @@ class TD3Config(AlgorithmConfig):
     policy_update_freq: int = 2
 
     actor_config: MLPConfig = MLPConfig(
-        hidden_sizes=[256, 256], output_activation_function=nn.Tanh.__name__
+        hidden_sizes=[1024, 1024], output_activation_function=nn.Tanh.__name__
     )
-    critic_config: MLPConfig = MLPConfig(hidden_sizes=[256, 256])
+    critic_config: MLPConfig = MLPConfig(hidden_sizes=[1024, 1024])
 
 
 class TD3AEConfig(TD3Config):
@@ -772,8 +772,8 @@ class CTD4Config(TD3Config):
     policy_update_freq: int = 2
 
     actor_config: MLPConfig = MLPConfig(
-        hidden_sizes=[256, 256], output_activation_function=nn.Tanh.__name__
+        hidden_sizes=[1024, 1024], output_activation_function=nn.Tanh.__name__
     )
-    critic_config: MLPConfig = MLPConfig(hidden_sizes=[256, 256])
+    critic_config: MLPConfig = MLPConfig(hidden_sizes=[1024, 1024])
 
     fusion_method: str = "kalman"  # kalman, minimum, average

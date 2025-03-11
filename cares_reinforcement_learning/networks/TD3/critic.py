@@ -10,10 +10,11 @@ class DefaultCritic(TwinQNetwork):
         self,
         observation_size: int,
         num_actions: int,
-        hidden_sizes: list[int] | None = None,
+        config: TD3Config,
     ):
-        if hidden_sizes is None:
-            hidden_sizes = [256, 256]
+        # hidden_sizes = config.critic_config.hidden_sizes
+        # if hidden_sizes is None:
+        hidden_sizes = [256, 256]
 
         input_size = observation_size + num_actions
 
@@ -28,6 +29,7 @@ class DefaultCritic(TwinQNetwork):
         self.Q1 = nn.Sequential(
             nn.Linear(input_size, hidden_sizes[0]),
             nn.ReLU(),
+            nn.BatchNorm1d(hidden_sizes[0]),
             nn.Linear(hidden_sizes[0], hidden_sizes[1]),
             nn.ReLU(),
             nn.Linear(hidden_sizes[1], 1),
@@ -38,6 +40,7 @@ class DefaultCritic(TwinQNetwork):
         self.Q2 = nn.Sequential(
             nn.Linear(input_size, hidden_sizes[0]),
             nn.ReLU(),
+            nn.BatchNorm1d(hidden_sizes[0]),
             nn.Linear(hidden_sizes[0], hidden_sizes[1]),
             nn.ReLU(),
             nn.Linear(hidden_sizes[1], 1),
