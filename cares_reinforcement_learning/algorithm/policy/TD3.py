@@ -34,9 +34,9 @@ class TD3:
         self.critic_net = critic_network.to(self.device)
 
         self.target_actor_net = copy.deepcopy(self.actor_net).to(self.device)
-        # self.target_actor_net.eval()  # never in training mode - helps with batch/drop out layers
+        self.target_actor_net.eval()  # never in training mode - helps with batch/drop out layers
         self.target_critic_net = copy.deepcopy(self.critic_net).to(self.device)
-        # self.target_critic_net.eval()  # never in training mode - helps with batch/drop out layers
+        self.target_critic_net.eval()  # never in training mode - helps with batch/drop out layers
 
         self.gamma = config.gamma
         self.tau = config.tau

@@ -26,7 +26,7 @@ class DefaultActor(DeterministicPolicy):
         self.act_net = nn.Sequential(
             nn.Linear(observation_size, hidden_sizes[0]),
             nn.ReLU(),
-            # nn.BatchNorm1d(hidden_sizes[0]),
+            nn.BatchNorm1d(hidden_sizes[0]),
             nn.Linear(hidden_sizes[0], hidden_sizes[1]),
             nn.ReLU(),
             nn.Linear(hidden_sizes[1], num_actions),
