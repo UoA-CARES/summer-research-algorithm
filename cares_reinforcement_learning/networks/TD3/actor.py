@@ -13,7 +13,7 @@ class DefaultActor(DeterministicPolicy):
     ):
         # hidden_sizes = config.actor_config.hidden_sizes
         # if hidden_sizes is None:
-        hidden_sizes = [256, 256]
+        hidden_sizes = [1024, 1024]
 
         super().__init__(
             input_size=observation_size,
