@@ -189,6 +189,30 @@ class DuelingDQNConfig(DQNConfig):
     advantage_stream_config: MLPConfig = MLPConfig(hidden_sizes=[128])
 
 
+class NoisyNetConfig(DQNConfig):
+    algorithm: str = Field("NoisyNet", Literal=True)
+    lr: float = 1e-3
+    gamma: float = 0.99
+    tau: float = 1.0
+    target_update_freq: int = 1000
+
+    max_grad_norm: float | None = 10.0
+
+    start_epsilon: float = 0.0
+    end_epsilon: float = 0.0
+    decay_steps: int = 0
+
+    batch_size: int = 32
+
+    use_double_dqn: int = 1
+
+    network_config: MLPConfig = MLPConfig(
+        hidden_sizes=[64, 64],
+        linear_layer="NoisyLinear",
+        linear_layer_args={"sigma_init": 1.0},
+    )
+
+
 ###################################
 #         PPO Algorithms          #
 ###################################
